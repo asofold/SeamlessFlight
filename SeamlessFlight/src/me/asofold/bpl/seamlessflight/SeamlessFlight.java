@@ -450,7 +450,6 @@ public class SeamlessFlight extends JavaPlugin implements Listener{
 		final FlyConfig fc = flyConfigs.get(lcName);
 		if (fc == null || fc.flyState == FlyState.DISABLED){
 			flyConfigs.remove(lcName);
-			System.out.println("removed fc: " + lcName);
 		}
 	}
 	
