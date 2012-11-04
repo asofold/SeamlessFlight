@@ -77,7 +77,7 @@ public abstract class FlyMode{
 	public double maxSpeed = 1.6;
 	
 	public boolean smoothing = true;
-	public double smoothingWeight = 0.5;
+	public double smoothingWeight = 0.25;
 	
 //	private final Random random = new Random(System.currentTimeMillis()-113);
 //	private final double incHovSPazz = 0.1;
