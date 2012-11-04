@@ -1,0 +1,14 @@
+name: SeamlessFlight
+main: me.asofold.bpl.seamlessflight.SeamlessFlight
+version: 1.0.0
+softdepend:
+- NoCheatPlus
+
+commands:
+  seamlessflight:
+    aliases:
+    - fly
+    - sfly
+    description: 'Enable or disable flying.'
+    usage: '/<command> on | /<command> off'
+

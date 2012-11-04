@@ -1,0 +1,94 @@
+SeamlessFlight - lists
+-------------------------------------------------
+
+SeamlessFlight officially is a "Fridays plugin", but has been
+implemented in the night between Saturday and Sunday.
+
+Also it has not been written from scratch but has been detached from a
+ "fat server core plugin" to be an independent plugin.
+
+Flying integrates with game play, using toggling sneak to control flying modes.
+
+DOCS
+------------------------------------------------
+
+You can allow flying with turning it on with the /fly command,
+ use "/fly" to toggle if flying can be used, or explicitly turn it on or off
+ with "/fly on" and "/fly off", use tab completion for aliases.
+
+You do not directly fly with flying enabled, in fact you can play normally and
+ start flying by toggling sneak (see below).
+
+Three speed modes are available:
+* Hover (creative fly)
+* Normal (cruise speed)
+* Speed (fast)
+
+In normal and speed modes you hold sneak to accelerate, 
+ flying into the direction you are looking towards. 
+Hover mode is just the standard creative flying.
+
+Lift off and switching to a faster mode are done with hitting sneak twice
+ but holding it down with the second hit.
+Speed decrease is done with a short hit of sneak (no hold).
+
+Normal lift off is with 2xsneak in normal mode (cruise speed).
+
+There are specialties with hover mode:
+* Hit sneak shortly (no hold) while falling and you switch to hover mode.
+    Also works with multiple taps (regardles of hold).
+* Hit sneak three or more times swiftly and hold to switch to hover mode
+    for lift-off - however creative fly will go down with sneak, 
+    so you need to switch to sprint (double-space usually),
+    which can be tricky, but allows lift-off in hover mode directly,
+    with a little practice.
+
+Flying will be turned off if you are in creative mode, 
+ the speed modes are not available. If you have creative mode,
+ the player will be allowed to fly, which might conflict with plugins that
+ allow creative mode but without flying.
+ 
+Permissions:
+* seamlessflight.fly.use: Use command + flying.
+* seamlessflight.bypass.stop.flythrough: Fly through water, lava, ladders and similar.
+* seamlessflight.bypass.stop.liftoff: Lift off from water, lava, ladders and similar.
+
+MILESTONES
+------------------------------------------------
+
+*** Detect falling due to lag / etc.
+
+*** Monitor flying speed (plshared probably).
+
+*** Add better direct lift off in hover.
+
+*** AntiCheat exemption use.
+
+*** add events for start / end flying / changing speed (from to , FlyState + null).
+
+*** Add permissions for use of different modes.
+
+*** Add cost for flying: a) Food, b) money, c) items, d) combinations ??
+
+*** Speeds configurable
+
+*** Max height configurable (!) + similar to (temporary) permission loss
+
+*** Implement configuration
+
+*** NoCheatPlus exemption use.
+
+
+STACK
+------------------------------------------------
+
+!hover / on ground: more precise on-ground checks to allow flying / hovering at east 1/3 of a block above the ground, also for lift off in hover.
+
+? more saving ?
+
+more cleanup (adapt etc).
+
+! more consistency for world changes / teleports -> at least force full re-check (perm + stop).
+! world changes in moving events.
+
+*** Bugs ***
