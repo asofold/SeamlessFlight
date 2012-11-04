@@ -164,6 +164,8 @@ public class SeamlessFlight extends JavaPlugin implements Listener{
 	public void onDisable() {
 		// Cancel tasks.
 		Bukkit.getScheduler().cancelTasks(this);
+		// Cancel ActionChecker.
+		flyMode.cancelActionChecker();
 		// Save flystates.
 		// TODO: check settings.
 		saveFlyStates();
