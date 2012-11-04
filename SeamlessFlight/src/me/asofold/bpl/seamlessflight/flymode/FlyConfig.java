@@ -1,4 +1,4 @@
-package me.asofold.bpl.seamlessflight.plshared.flymode;
+package me.asofold.bpl.seamlessflight.flymode;
 
 import me.asofold.bpl.seamlessflight.plshared.Blocks;
 import me.asofold.bpl.seamlessflight.plshared.blocks.FBlockPos;

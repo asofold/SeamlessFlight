@@ -13,12 +13,12 @@ import java.util.Set;
 
 import me.asofold.bpl.seamlessflight.config.compatlayer.CompatConfig;
 import me.asofold.bpl.seamlessflight.config.compatlayer.CompatConfigFactory;
+import me.asofold.bpl.seamlessflight.flymode.FlyConfig;
+import me.asofold.bpl.seamlessflight.flymode.FlyMode;
+import me.asofold.bpl.seamlessflight.flymode.FlyResult;
+import me.asofold.bpl.seamlessflight.flymode.FlyState;
 import me.asofold.bpl.seamlessflight.hooks.NoCheatPlusHooks;
 import me.asofold.bpl.seamlessflight.plshared.actions.ActionType;
-import me.asofold.bpl.seamlessflight.plshared.flymode.FlyConfig;
-import me.asofold.bpl.seamlessflight.plshared.flymode.FlyMode;
-import me.asofold.bpl.seamlessflight.plshared.flymode.FlyResult;
-import me.asofold.bpl.seamlessflight.plshared.flymode.FlyState;
 
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
