@@ -367,18 +367,31 @@ public class SeamlessFlight extends JavaPlugin implements Listener{
 	public boolean stopFly(final Player player) {
 		final String lcName = player.getName().toLowerCase();
 		final FlyConfig fc = flyConfigs.get(lcName);
-		if (fc == null || !fc.isFlying()) return false;
-		if (ncpPresent){
-			try{
-				NoCheatPlusHooks.resetViolations(player);
-			} catch (Throwable t){}
+		if (fc == null) return false;
+		if (!fc.isFlying()){
+			if (!takesFallDamage(player)) reset(player);
+			return false;
 		}
+		reset(player);
 		fc.setFlying(false);
 		updateFlyState(player);
 		player.sendMessage(ChatColor.YELLOW+"FLY: "+ChatColor.RED+"off"); // TODO
 		return true;
 	}
 	
+	/**
+	 * Reset violations and similar.
+	 * @param player
+	 */
+	public void reset(Player player) {
+		player.setFallDistance(0f);
+		if (ncpPresent){
+			try{
+				NoCheatPlusHooks.resetViolations(player);
+			} catch (Throwable t){}
+		}
+	}
+
 	/**
 	 * Checks FlyConfig.
 	 * @param player
@@ -387,25 +400,11 @@ public class SeamlessFlight extends JavaPlugin implements Listener{
 	public boolean takesFallDamage(final Player player) {
 		final FlyConfig fc = flyConfigs.get(player.getName().toLowerCase());
 		if (fc == null) return true;
-		if (fc.isFlying()){
-			if (ncpPresent){
-				try{
-					NoCheatPlusHooks.resetViolations(player);
-				} catch (Throwable t){}
-			}
-			return false;
-		}
+		if (fc.isFlying()) return false;
 		if (fc.noFallBlock == null) return true;
 		final Location loc = player.getLocation();
 		if (fc.useFallDamage(loc.getWorld().getName(), loc.getBlockX(), loc.getBlockY(), loc.getBlockZ())) return true;
-		else{
-			if (ncpPresent){
-				try{
-					NoCheatPlusHooks.resetViolations(player);
-				} catch (Throwable t){}
-			}
-			return false;
-		}
+		else return false;
 	}
 	
 	private final FlyResult processFly(final Player player, final Location lFrom, final Location lTo, final boolean forceFull){
@@ -427,12 +426,7 @@ public class SeamlessFlight extends JavaPlugin implements Listener{
 				player.sendMessage(ChatColor.YELLOW+"FLY: "+ChatColor.RED+"off"); // TODO
 			}
 			flying.remove(lcName);
-			if (ncpPresent){
-				try{
-					NoCheatPlusHooks.resetViolations(player);
-				}
-				catch (Throwable t){}
-			}
+			reset(player);
 			flyMode.adapt(player, fc);
 		} 
 //		if (res.configChanged) ...
@@ -504,7 +498,10 @@ public class SeamlessFlight extends JavaPlugin implements Listener{
 		final Entity entity = event.getEntity();
 		if (!(entity instanceof Player)) return;
 		// currently also call for cancelled events for resetting no-fall block.
-		if (!takesFallDamage((Player) entity)) event.setCancelled(true);
+		if (!takesFallDamage((Player) entity)){
+			reset((Player) entity);
+			event.setCancelled(true);
+		}
 	}
 	
 	@EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
