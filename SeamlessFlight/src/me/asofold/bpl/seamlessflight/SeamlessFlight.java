@@ -368,6 +368,11 @@ public class SeamlessFlight extends JavaPlugin implements Listener{
 		final String lcName = player.getName().toLowerCase();
 		final FlyConfig fc = flyConfigs.get(lcName);
 		if (fc == null || !fc.isFlying()) return false;
+		if (ncpPresent){
+			try{
+				NoCheatPlusHooks.resetViolations(player);
+			} catch (Throwable t){}
+		}
 		fc.setFlying(false);
 		updateFlyState(player);
 		player.sendMessage(ChatColor.YELLOW+"FLY: "+ChatColor.RED+"off"); // TODO
