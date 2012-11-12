@@ -26,7 +26,7 @@ import org.bukkit.util.Vector;
  * Final for ... errr .... 
  * TODO: refactor to not use clone !
  * TODO: Add boolean flags to FlyConfig and a global one for messages ?
- * TODO: Flags if to use permissions ! SO FAR : IGNORED
+ * TODO: Flags if to use defaultPermissions ! SO FAR : IGNORED
  * 
  * @author mc_dev
  *
@@ -150,7 +150,7 @@ public abstract class FlyMode{
 		}
 		
 		if (!hasPermission(player, rootPerm+".use")){
-			return; // TODO: more fine grained permissions + fallback
+			return; // TODO: more fine grained defaultPermissions + fallback
 		}
 		switch  ( actionType){
 		case LONG_RELEASE:
@@ -277,7 +277,7 @@ public abstract class FlyMode{
 		boolean stop = false;
 		if ( ts-fc.tsPermCheck > msFlyCheck ){
 			fc.tsPermCheck = ts;
-			if ( !hasPermission(player, rootPerm+".use")) abort = true; // TODO: more fine grained permissions
+			if ( !hasPermission(player, rootPerm+".use")) abort = true; // TODO: more fine grained defaultPermissions
 			else if (!hasPermission(player, rootPerm+".bypass.stop.flythrough")){
 				if (y<=loc.getWorld().getMaxHeight() && stopIds.contains(loc.getBlock().getTypeId())){
 					abort = true;

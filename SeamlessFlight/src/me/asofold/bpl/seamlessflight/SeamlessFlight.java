@@ -382,10 +382,25 @@ public class SeamlessFlight extends JavaPlugin implements Listener{
 	public boolean takesFallDamage(final Player player) {
 		final FlyConfig fc = flyConfigs.get(player.getName().toLowerCase());
 		if (fc == null) return true;
-		if (fc.isFlying()) return false;
+		if (fc.isFlying()){
+			if (ncpPresent){
+				try{
+					NoCheatPlusHooks.resetViolations(player);
+				} catch (Throwable t){}
+			}
+			return false;
+		}
 		if (fc.noFallBlock == null) return true;
 		final Location loc = player.getLocation();
-		return fc.useFallDamage(loc.getWorld().getName(), loc.getBlockX(), loc.getBlockY(), loc.getBlockZ());
+		if (fc.useFallDamage(loc.getWorld().getName(), loc.getBlockX(), loc.getBlockY(), loc.getBlockZ())) return true;
+		else{
+			if (ncpPresent){
+				try{
+					NoCheatPlusHooks.resetViolations(player);
+				} catch (Throwable t){}
+			}
+			return false;
+		}
 	}
 	
 	private final FlyResult processFly(final Player player, final Location lFrom, final Location lTo, final boolean forceFull){
@@ -454,7 +469,7 @@ public class SeamlessFlight extends JavaPlugin implements Listener{
 	}
 	
 	/////////////////////
-	// Listener methods
+	// listener methods
 	/////////////////////
 	
 	@EventHandler(priority = EventPriority.NORMAL)

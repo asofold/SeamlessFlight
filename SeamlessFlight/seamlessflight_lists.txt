@@ -82,6 +82,12 @@ MILESTONES
 STACK
 ------------------------------------------------
 
+!remove violations more often (cruise, speed).
+
+1.4 blocks !
+
+?polling method: more efficient ?
+
 !hover / on ground: more precise on-ground checks to allow flying / hovering at east 1/3 of a block above the ground, also for lift off in hover.
 
 ? more saving ?
