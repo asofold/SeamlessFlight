@@ -103,6 +103,8 @@ public class SeamlessFlight extends JavaPlugin implements Listener{
 
 	private Settings settings;
 	
+	private final CombatSymmetrySettings allowAll = new CombatSymmetrySettings();
+	
 	public SeamlessFlight(){
 		for (String cmd : new String[]{
 				"on", "off", "enable", "disable", "1", "0", "start", "stop",
@@ -636,6 +638,7 @@ public class SeamlessFlight extends JavaPlugin implements Listener{
 		else{
 			isPlayer2 = isFlying2 = false;
 		}
+		if (!isFlying && !isFlying2) return allowAll; 
 		return settings.combat.getSymmetrySettings(CombatSymmetry.getSymmetry(isPlayer, isFlying, isPlayer2, isFlying2));
 	}
 	

@@ -1,6 +1,6 @@
 name: SeamlessFlight
 main: me.asofold.bpl.seamlessflight.SeamlessFlight
-version: 1.1.0
+version: 1.1.1
 softdepend:
 - NoCheatPlus
 
