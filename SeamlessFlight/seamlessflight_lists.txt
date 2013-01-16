@@ -12,6 +12,7 @@ Flying integrates with game play, using toggling sneak to control flying modes.
 DOCS
 ------------------------------------------------
 
+Flying:
 You can allow flying with turning it on with the /fly command,
  use "/fly" to toggle if flying can be used, or explicitly turn it on or off
  with "/fly on" and "/fly off", use tab completion for aliases.
@@ -47,11 +48,21 @@ Flying will be turned off if you are in creative mode,
  the speed modes are not available. If you have creative mode,
  the player will be allowed to fly, which might conflict with plugins that
  allow creative mode but without flying.
+
+Combat Settings: 
+The configuration allows to set global prests for combat symmetries.
+These can be like air->ground. The first is always the attacker.
+You can block potions effects, damage dealt by close combat or arrows.
+To be added: Permissions.
+
+More Commands:
+Reload the settings: /sfreload
  
 Permissions:
 * seamlessflight.fly.use: Use command + flying.
 * seamlessflight.bypass.stop.flythrough: Fly through water, lava, ladders and similar.
 * seamlessflight.bypass.stop.liftoff: Lift off from water, lava, ladders and similar.
+* seamlessflight.reload: Reload the settings (with /sfreload).
 
 MILESTONES
 ------------------------------------------------
@@ -97,4 +108,10 @@ more cleanup (adapt etc).
 ! more consistency for world changes / teleports -> at least force full re-check (perm + stop).
 ! world changes in moving events.
 
-*** Bugs ***
+
+*** combat settings.
+
+Make combat settings (global presets) available.
+
+
+

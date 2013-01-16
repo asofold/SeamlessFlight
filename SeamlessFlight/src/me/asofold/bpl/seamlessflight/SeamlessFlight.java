@@ -3,9 +3,11 @@ package me.asofold.bpl.seamlessflight;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -19,6 +21,9 @@ import me.asofold.bpl.seamlessflight.flymode.FlyResult;
 import me.asofold.bpl.seamlessflight.flymode.FlyState;
 import me.asofold.bpl.seamlessflight.hooks.NoCheatPlusHooks;
 import me.asofold.bpl.seamlessflight.plshared.actions.ActionType;
+import me.asofold.bpl.seamlessflight.settings.Settings;
+import me.asofold.bpl.seamlessflight.settings.combat.CombatSymmetry;
+import me.asofold.bpl.seamlessflight.settings.combat.CombatSymmetrySettings;
 
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -27,13 +32,17 @@ import org.bukkit.Location;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Entity;
+import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
+import org.bukkit.entity.Projectile;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
+import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
 import org.bukkit.event.entity.PlayerDeathEvent;
+import org.bukkit.event.entity.PotionSplashEvent;
 import org.bukkit.event.player.PlayerChangedWorldEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerKickEvent;
@@ -91,6 +100,8 @@ public class SeamlessFlight extends JavaPlugin implements Listener{
 	private final Map<String, Player> flying = new LinkedHashMap<String, Player>(50);
 	
 	private final Set<String> flyCmds = new LinkedHashSet<String>();
+
+	private Settings settings;
 	
 	public SeamlessFlight(){
 		for (String cmd : new String[]{
@@ -141,7 +152,7 @@ public class SeamlessFlight extends JavaPlugin implements Listener{
 		flyMode.registerActionChecker(this);
 		
 		// Load settings.
-		// TODO: load settings
+		reloadSettings(null);
 		
 		// Register hooks.
 		// NoCheatPlus
@@ -233,7 +244,15 @@ public class SeamlessFlight extends JavaPlugin implements Listener{
 		label = getLabel(command, label);
 		String cmd = null;
 		if (args.length > 0) cmd = args[0].trim().toLowerCase();
-		if (label.equals("seamlessflight")){
+		if (label.equals("sfreload")){
+			if (!sender.hasPermission("seamlessflight.reload")){
+				sender.sendMessage(ChatColor.DARK_RED + "No permission for reload.");
+				return true;
+			}
+			reloadSettings(sender);
+			return true;
+		}
+		else if (label.equals("seamlessflight")){
 			if ((sender instanceof Player) && args.length == 0 || args.length == 1 && flyCmds.contains(cmd)){
 				final Player player = (Player) sender;
 				if (!player.hasPermission(flyMode.rootPerm + ".use")){
@@ -263,6 +282,22 @@ public class SeamlessFlight extends JavaPlugin implements Listener{
 		else return false;
 	}
 	
+	public void reloadSettings(CommandSender notify) {
+		String msg;
+		try{
+			this.settings = Settings.readSettings(new File(getDataFolder(), "config.yml"), true);
+			msg = "[SeamlessFlight] Settings reloaded.";
+		}
+		catch(Throwable t){
+			msg = "[SeamlessFlight] Error while loading the config (keep old/defaults), see log file: " + t.getClass().getSimpleName() + "/" + t.getMessage();
+			getServer().getLogger().severe(msg);
+			t.printStackTrace();
+		}
+		if (notify != null){
+			notify.sendMessage(msg);
+		}
+	}
+
 	@Override
 	public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args)
 	{
@@ -492,18 +527,6 @@ public class SeamlessFlight extends JavaPlugin implements Listener{
 		if (res.setTo!=null) event.setTo(res.setTo);
 	}
 	
-	@EventHandler(priority = EventPriority.NORMAL) //, ignoreCancelled = true)
-	public void onEntityDamage(final EntityDamageEvent event){
-		if (event.getCause() != DamageCause.FALL) return;
-		final Entity entity = event.getEntity();
-		if (!(entity instanceof Player)) return;
-		// currently also call for cancelled events for resetting no-fall block.
-		if (!takesFallDamage((Player) entity)){
-			reset((Player) entity);
-			event.setCancelled(true);
-		}
-	}
-	
 	@EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
 	public void onPlayerKick(final PlayerKickEvent event){
 		onLeave(event.getPlayer());
@@ -527,6 +550,93 @@ public class SeamlessFlight extends JavaPlugin implements Listener{
 	@EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = false)
 	public void onPlayerDeath(final PlayerDeathEvent event){
 		stopFly(event.getEntity());
+	}
+	
+	@EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
+	public void onEntityDamage(final EntityDamageEvent event){
+		// 
+		if (event instanceof EntityDamageByEntityEvent){
+			onEntityDamage((EntityDamageByEntityEvent) event);
+			return;
+		}
+		// Further only process fall damage:
+		if (event.getCause() != DamageCause.FALL) return;
+		final Entity entity = event.getEntity();
+		if (!(entity instanceof Player)) return;
+		// currently also call for cancelled events for resetting no-fall block.
+		if (!takesFallDamage((Player) entity)){
+			reset((Player) entity);
+			event.setCancelled(true);
+		}
+	}
+
+	/**
+	 * Not an event handler (!). Called form EntityDamageEvent handler.
+	 * @param event
+	 */
+	private void onEntityDamage(final EntityDamageByEntityEvent event)
+	{
+		// Don't rule out damage reasons at present.
+		final Entity damaged = event.getEntity();
+		final Entity damager = event.getDamager();
+		if (damager instanceof Projectile){
+			final Entity shooter = ((Projectile) damager).getShooter();
+			if (!getCombatSymmetrySettings(shooter, damaged).allowProjectiles){
+				event.setCancelled(true);
+			}
+		}
+		else{
+			// Not a projectile.
+			if (!getCombatSymmetrySettings(damager, damaged).allowCloseCombat){
+				event.setCancelled(true);
+			}
+		}
+		
+	}
+	
+	@EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
+	public void onPotionSplash(final PotionSplashEvent event){
+		final Entity thrower = event.getEntity();
+		final List<LivingEntity> rem = new LinkedList<LivingEntity>();
+		final Collection<LivingEntity> affected = event.getAffectedEntities();
+		final boolean isPlayer,  isFlying;
+		if (thrower instanceof Player){
+			isPlayer = true;
+			isFlying = isFlying((Player) thrower);
+		}
+		else{
+			isPlayer = isFlying = false;
+		}
+		for (final LivingEntity other : event.getAffectedEntities()){
+			if (!getCombatSymmetrySettings(isPlayer, isFlying, other).allowPotions){
+				rem.add(other);
+			}
+		}
+		if (!rem.isEmpty()) affected.removeAll(rem);
+	}
+	
+	public final CombatSymmetrySettings getCombatSymmetrySettings(final Entity damager, final Entity damaged){
+		final boolean isPlayer,  isFlying;
+		if (damager instanceof Player){
+			isPlayer = true;
+			isFlying = isFlying((Player) damager);
+		}
+		else{
+			isPlayer = isFlying = false;
+		}
+		return getCombatSymmetrySettings(isPlayer, isFlying, damaged);
+	}
+	
+	private final CombatSymmetrySettings getCombatSymmetrySettings(final boolean isPlayer, final boolean isFlying, final Entity damaged){
+		final boolean isPlayer2,  isFlying2;
+		if (damaged instanceof Player){
+			isPlayer2 = true;
+			isFlying2 = isFlying((Player) damaged);
+		}
+		else{
+			isPlayer2 = isFlying2 = false;
+		}
+		return settings.combat.getSymmetrySettings(CombatSymmetry.getSymmetry(isPlayer, isFlying, isPlayer2, isFlying2));
 	}
 	
 }
