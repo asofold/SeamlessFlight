@@ -560,7 +560,6 @@ public abstract class FlyMode{
 	}
 	
 	protected  FlyState getAlternativeFlyState(final Player player, final FlyConfig fc, final long ts, boolean increase) {
-		System.out.println(fc.flyState + " / " + increase);
 		switch(fc.flyState){
 		case HOVER:
 			if (canUseFlyState(player, fc, FlyState.NORMAL, ts)) return FlyState.NORMAL;
