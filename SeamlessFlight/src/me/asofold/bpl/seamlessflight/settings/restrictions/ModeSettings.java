@@ -19,7 +19,6 @@ public class ModeSettings {
 		for (FlyState state : FlyState.values()){
 			if (state.isFlying){
 				FlyStateSettings fsf = new FlyStateSettings();
-				fsf.bypassPermission = fsf.bypassPermission + "." + state.name().toLowerCase();
 				states.put(state, fsf);
 			}
 		}

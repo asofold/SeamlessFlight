@@ -10,11 +10,6 @@ public class FlyStateSettings {
 	/** Maximum flying time in this mode within msReset period. */
 	public long msMaxFly = 0;
 	
-	public String bypassPermission = "seamlessflight.fly.bypass.maxtime";
-	
-	
-	
-	
 	public void toConfig(CompatConfig cfg, String prefix) {
 		cfg.set(prefix + "seconds-reset", (int) (msReset / 1000L));
 		cfg.set(prefix + "seconds-max-fly", (int) (msMaxFly / 1000L));
