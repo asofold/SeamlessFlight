@@ -1,5 +1,8 @@
 package me.asofold.bpl.seamlessflight.flymode;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import me.asofold.bpl.seamlessflight.plshared.Blocks;
 import me.asofold.bpl.seamlessflight.plshared.blocks.FBlockPos;
 
@@ -11,12 +14,20 @@ import me.asofold.bpl.seamlessflight.plshared.blocks.FBlockPos;
  *
  */
 public class FlyConfig {
+	
+	protected static class Timing{
+		public long tsExpire = 0;
+		public long msUse = 0;
+	}
 
 	public FlyState flyState = FlyState.DISABLED; // default
 
 	
 	public long tsPermCheck = 0;
 	// TODO: other stuff, smoothing, vert+horiz-speed/slope, ...
+	
+	
+	public final Map<FlyState, Timing> timings = new HashMap<FlyState, Timing>();
 	
 	/**
 	 * To see signum change

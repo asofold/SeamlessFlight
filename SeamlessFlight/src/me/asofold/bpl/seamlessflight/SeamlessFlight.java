@@ -101,7 +101,7 @@ public class SeamlessFlight extends JavaPlugin implements Listener{
 	
 	private final Set<String> flyCmds = new LinkedHashSet<String>();
 
-	private Settings settings;
+	private Settings settings = new Settings();
 	
 	private final CombatSymmetrySettings allowAll = new CombatSymmetrySettings();
 	
@@ -111,7 +111,7 @@ public class SeamlessFlight extends JavaPlugin implements Listener{
 		}){
 			flyCmds.add(cmd);
 		}
-		flyMode = new FlyMode() {
+		flyMode = new FlyMode(settings) {
 			@Override
 			public final FlyConfig getFlyConfig(final String playerName) {
 				final String lcName = playerName.toLowerCase();
@@ -288,6 +288,7 @@ public class SeamlessFlight extends JavaPlugin implements Listener{
 		String msg;
 		try{
 			this.settings = Settings.readSettings(new File(getDataFolder(), "config.yml"), true);
+			flyMode.setSettings(settings);
 			msg = "[SeamlessFlight] Settings reloaded.";
 		}
 		catch(Throwable t){

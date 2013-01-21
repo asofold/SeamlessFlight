@@ -109,9 +109,8 @@ more cleanup (adapt etc).
 ! world changes in moving events.
 
 
-*** combat settings.
+*** Control over flying modes: 
 
-Make combat settings (global presets) available.
+! add Permissions for changing to a mode, change to available one.
 
-
-
+! add configurability for speeds for various modes [difficulty: flying speed for creative-flying (maybe not difficut)].

@@ -1,6 +1,6 @@
 name: SeamlessFlight
 main: me.asofold.bpl.seamlessflight.SeamlessFlight
-version: 1.1.1
+version: 1.2.0
 softdepend:
 - NoCheatPlus
 
@@ -14,4 +14,34 @@ commands:
   sfreload:
     description: 'Reload the configuration of SeamlessFlight.'
     usage: '/<command>'
+
+permissions:
+  seamlessflight:
+    description: 'All permissions.'
+    children:
+      seamlessflight.reload:
+        description: 'Reload the config: /sfreload'
+      seamlessflight.fly:
+        description: 'All flying related features, including bypasses.'
+        children:
+          seamlessflight.fly.use:
+            description: 'Permission to toggle flying with /fly... and to actually fly.'
+          seamlessflight.fly.bypass:
+            description: 'All bypass permissions.'
+            seamlessflight.fly.bypass.stop:
+               description: 'Bypass getting stopped during flying/lift-off, mostly block-specific.'
+               children:
+                 seamlessflight.fly.bypass.stop.liftoff:
+                   description: 'Bypass lift-off conditions like water, lava.'
+                 seamlessflight.fly.bypass.stop.flythrough:
+                   description: 'Bypass fly-through conditions like water, lava.'  
+            seamlessflight.fly.bypass.maxtime:
+               description: 'Bypass getting stopped during flying/lift-off, due to maximum flying time for a mode.'
+               children:
+                 seamlessflight.fly.bypass.maxtime.hover:
+                   description: 'Bypass for max-time in hover mode.'
+                 seamlessflight.fly.bypass.maxtime.speed:
+                   description: 'Bypass for max-time in hover mode.'
+                 seamlessflight.fly.bypass.maxtime.normal:
+                   description: 'Bypass for max-time in hover mode.'
 
