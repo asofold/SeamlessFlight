@@ -1,9 +1,6 @@
 package me.asofold.bpl.seamlessflight.flymode;
 
 
-import java.util.HashSet;
-import java.util.Set;
-
 import me.asofold.bpl.seamlessflight.flymode.FlyConfig.Timing;
 import me.asofold.bpl.seamlessflight.plshared.Blocks;
 import me.asofold.bpl.seamlessflight.plshared.Teleport;
@@ -42,11 +39,6 @@ public abstract class FlyMode{
 	 * Must be set, for at least actionChecker.getToggleState will be used.
 	 */
 	public final ActionChecker actionChecker = new FlyModeActionChecker(this);
-	
-	/**
-	 * Extra blocks that stop flying on checks.
-	 */
-	public final Set<Integer> stopIds = new HashSet<Integer>();
 	
 	int actionCheckerId = -1;
 	
@@ -685,10 +677,7 @@ public abstract class FlyMode{
 	public void setSettings(Settings settings) {
 		this.settings = settings;
 		modeSettings = settings.modes;
-		// Fill in some values for fast access.
 		// TODO: maybe use an array later, for block specs/flags ?
-		stopIds.clear();
-		stopIds.addAll(settings.stopIds);
 	}
 
 }
