@@ -7,7 +7,7 @@ implemented in the night between Saturday and Sunday.
 Also it has not been written from scratch but has been detached from a
  "fat server core plugin" to be an independent plugin.
 
-Flying integrates with game play, using toggling sneak to control flying modes.
+Flying integrates with game play, using toggling sneak to control fly modes.
 
 DOCS
 ------------------------------------------------
@@ -55,14 +55,24 @@ These can be like air->ground. The first is always the attacker.
 You can block potions effects, damage dealt by close combat or arrows.
 To be added: Permissions.
 
+Stop settings:
+To control what blocks players can not fly through you can set stop.ids.
+Further you can let all solid blocks like stairs be added: stop-solid.
+Set always-check-stop to true to check on every move 
+    (Much more accurate but not 100%, slight performance penalty).
+
 More Commands:
 Reload the settings: /sfreload
  
 Permissions:
-* seamlessflight.fly.use: Use command + flying.
-* seamlessflight.bypass.stop.flythrough: Fly through water, lava, ladders and similar.
-* seamlessflight.bypass.stop.liftoff: Lift off from water, lava, ladders and similar.
-* seamlessflight.reload: Reload the settings (with /sfreload).
+* seamlessflight.fly.use: 
+    Use command + flying.
+* seamlessflight.bypass.stop.flythrough: 
+    Fly through water, lava, ladders and similar.
+* seamlessflight.bypass.stop.liftoff: 
+    Lift off from water, lava, ladders and similar.
+* seamlessflight.reload: 
+    Reload the settings (with /sfreload).
 
 MILESTONES
 ------------------------------------------------

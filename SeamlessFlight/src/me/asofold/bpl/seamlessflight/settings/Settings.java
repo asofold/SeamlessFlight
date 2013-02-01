@@ -5,6 +5,10 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Set;
 
+import org.bukkit.Location;
+import org.bukkit.Material;
+import org.bukkit.World;
+
 import me.asofold.bpl.seamlessflight.config.compatlayer.CompatConfig;
 import me.asofold.bpl.seamlessflight.config.compatlayer.CompatConfigFactory;
 import me.asofold.bpl.seamlessflight.config.compatlayer.ConfigUtil;
@@ -23,6 +27,11 @@ public class Settings {
 	
 	public final Set<Integer> stopIds = new HashSet<Integer>();
 	
+	/** Add all solid blocks to stop ids (not written back to config). */
+	public boolean stopSolid = false;
+	/** If to always check if flying through stop id blocks. */
+	public boolean checkStopAlways = false;
+	
 	public Settings(){
 		for ( Integer id : new int[]{
 			    8, 9, // water
@@ -40,6 +49,8 @@ public class Settings {
 		combat.toConfig(cfg, "combat.");
 		modes.toConfig(cfg, "modes.");
 		cfg.set("stop-ids", new LinkedList<Integer>(stopIds));
+		cfg.set("stop-solid", stopSolid);
+		cfg.set("check-stop-always", checkStopAlways);
 	}
 	
 	public void fromConfig(CompatConfig cfg){
@@ -48,6 +59,8 @@ public class Settings {
 		modes.fromConfig(cfg, "modes.");
 		stopIds.clear();
 		stopIds.addAll(cfg.getIntegerList("stop-ids", new LinkedList<Integer>(ref.stopIds)));
+		stopSolid = cfg.getBoolean("stop-solid", ref.stopSolid);
+		checkStopAlways = cfg.getBoolean("check-stop-always", ref.checkStopAlways);
 	}
 	
 	// -----
@@ -77,4 +90,24 @@ public class Settings {
 		settings.fromConfig(cfg);
 		return settings;
 	}
+	
+	/**
+	 * Check if a location is to stop flying (through).
+	 * @param loc
+	 * @return
+	 */
+	public boolean isStopId(final Location loc) {
+		final World world = loc.getWorld();
+		if  (loc.getY() > world.getMaxHeight()) return false;
+		final int id = world.getBlockTypeIdAt(loc.getBlockX(), loc.getBlockY(), loc.getBlockZ());
+		if (id == 0) return false; // Quick return for most cases.
+		if (stopIds.contains(id)) return true;
+		if (stopSolid){
+			final Material mat = Material.getMaterial(id);
+			if (mat != null && mat.isSolid()) return true;
+		}
+		// Otherwise let it pass.
+		return false;
+	}
+
 }

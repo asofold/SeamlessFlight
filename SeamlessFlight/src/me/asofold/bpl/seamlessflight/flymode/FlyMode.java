@@ -310,6 +310,14 @@ public abstract class FlyMode{
 		int y = loc.getBlockY();
 		boolean abort = false;
 		boolean stop = false;
+		
+		if (settings.checkStopAlways){
+			if (settings.isStopId(loc) && !hasPermission(player, rootPerm+".bypass.stop.flythrough")){
+				abort = true;
+				stop = true;
+			}
+		}
+		
 		FlyStateSettings fsSet = modeSettings.states.get(fc.flyState);
 		Timing timing = fc.timings.get(fc.flyState);
 		if (timing == null){
@@ -376,8 +384,8 @@ public abstract class FlyMode{
 			}
 			fc.tsPermCheck = ts;
 			if ( !hasPermission(player, rootPerm+".use")) abort = true; // TODO: more fine grained defaultPermissions
-			else if (!hasPermission(player, rootPerm+".bypass.stop.flythrough")){
-				if (y<=loc.getWorld().getMaxHeight() && stopIds.contains(loc.getBlock().getTypeId())){
+			else if (settings.isStopId(loc)){
+				if (!hasPermission(player, rootPerm+".bypass.stop.flythrough")){
 					abort = true;
 					stop = true;
 				}
@@ -558,7 +566,7 @@ public abstract class FlyMode{
 		
 		return res;
 	}
-	
+
 	protected  FlyState getAlternativeFlyState(final Player player, final FlyConfig fc, final long ts, boolean increase) {
 		switch(fc.flyState){
 		case HOVER:
@@ -619,15 +627,15 @@ public abstract class FlyMode{
 		return safe;
 	}
 	
-	public boolean canLiftOff(Player player){
-		if (stopIds.contains(player.getLocation().getBlock().getTypeId())){
+	public boolean canLiftOff(final Player player){
+		if (settings.isStopId(player.getLocation())){
 			if (!hasPermission(player, rootPerm+".bypass.stop.liftoff")) return false;
 		}
 		return true;
 	}
 
-	public boolean canFlyThrough(Player player){
-		if (stopIds.contains(player.getLocation().getBlock().getTypeId())){
+	public boolean canFlyThrough(final Player player){
+		if (settings.isStopId(player.getLocation())){
 			if (!hasPermission(player, rootPerm+".bypass.stop.flythrough")) return false;
 		}
 		return true;
