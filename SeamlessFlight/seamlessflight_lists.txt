@@ -114,3 +114,7 @@ more cleanup (adapt etc).
 ! add Permissions for changing to a mode, change to available one.
 
 ! add configurability for speeds for various modes [difficulty: flying speed for creative-flying (maybe not difficult)].
+
+? add min hunger levels + add time management (money, hunger, ...)
+
+*** BUG: flying stops when logging back in (!)
