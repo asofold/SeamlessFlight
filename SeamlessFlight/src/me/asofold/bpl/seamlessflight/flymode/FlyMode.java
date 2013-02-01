@@ -669,8 +669,12 @@ public abstract class FlyMode{
 			return;
 		}
 		else if (fc != null && fc.isFlying()){
+			// Set to flying.
 			player.setAllowFlight(true);
 			player.setFlying(fc.flyState == FlyState.HOVER);
+			// For safety also set noFallBlock.
+			fc.noFallBlock = Blocks.FBlockPos(player.getLocation());
+			fc.tsNoFall = System.currentTimeMillis();
 		}
 		else{
 			player.setAllowFlight(false);

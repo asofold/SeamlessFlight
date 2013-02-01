@@ -127,4 +127,11 @@ more cleanup (adapt etc).
 
 ? add min hunger levels + add time management (money, hunger, ...)
 
+
+add max-descend-speed for not having sneak on or last check being longer time ago
+
+! get rid of polling, find a way to use teleport instead !
+
+
 *** BUG: flying stops when logging back in (!)
+

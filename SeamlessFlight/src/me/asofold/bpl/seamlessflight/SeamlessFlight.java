@@ -370,9 +370,6 @@ public class SeamlessFlight extends JavaPlugin implements Listener{
 		final FlyConfig fc = flyConfigs.get(lcName);
 		flyMode.adapt(player, fc);
 		if (fc == null) return false;
-		if (player.getGameMode() == GameMode.CREATIVE){
-			fc.setFlying(false);
-		}
 		// no permission check here - contention period till next check. TODO: always check first move
 		final boolean isFlying = fc.isFlying();
 		if (isFlying) flying.put(lcName, player);
@@ -492,6 +489,11 @@ public class SeamlessFlight extends JavaPlugin implements Listener{
 		final Player[] players = new Player[flying.size()];
 		flying.values().toArray(players);
 		for (final Player player : players){
+			if (!player.isOnline()){
+				getLogger().warning("Player " + player.getName() + " is found in the flying players set, but is offline.");
+				flying.remove(player.getName().toLowerCase());
+				continue;
+			}
 			processFly(player, null, null, false);
 		}
 	}
@@ -500,7 +502,7 @@ public class SeamlessFlight extends JavaPlugin implements Listener{
 		final String lcName = player.getName().toLowerCase();
 		flying.remove(lcName);
 		final FlyConfig fc = flyConfigs.get(lcName);
-		if (fc == null || fc.flyState == FlyState.DISABLED){
+		if (fc != null && fc.flyState == FlyState.DISABLED){
 			flyConfigs.remove(lcName);
 		}
 	}
@@ -521,7 +523,7 @@ public class SeamlessFlight extends JavaPlugin implements Listener{
 		flyMode.actionChecker.onToggleAction(player.getName().toLowerCase(), isSneaking);
 	}
 	
-	@EventHandler(priority = EventPriority.NORMAL)
+	@EventHandler(priority = EventPriority.NORMAL, ignoreCancelled = true)
 	public final void onPlayerMove(final PlayerMoveEvent event) {
 		// TODO: priority
 		final Player player = event.getPlayer();
@@ -545,12 +547,17 @@ public class SeamlessFlight extends JavaPlugin implements Listener{
 		stopFly(event.getPlayer());
 	}
 	
-	@EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = false)
+	@EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
 	public void onPlayerTeleport(final PlayerTeleportEvent event){
-		stopFly(event.getPlayer());
+		final Location from = event.getFrom();
+		final Location to = event.getTo();
+		if (to == null || !from.getWorld().equals(to.getWorld())) return;
+		if (from.distance(to) > 10.0){
+			stopFly(event.getPlayer());
+		}
 	}
 	
-	@EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = false)
+	@EventHandler(priority = EventPriority.MONITOR)
 	public void onPlayerDeath(final PlayerDeathEvent event){
 		stopFly(event.getEntity());
 	}
