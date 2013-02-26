@@ -20,7 +20,9 @@ import me.asofold.bpl.seamlessflight.flymode.FlyMode;
 import me.asofold.bpl.seamlessflight.flymode.FlyResult;
 import me.asofold.bpl.seamlessflight.flymode.FlyState;
 import me.asofold.bpl.seamlessflight.hooks.NoCheatPlusHooks;
+import me.asofold.bpl.seamlessflight.plshared.Players;
 import me.asofold.bpl.seamlessflight.plshared.actions.ActionType;
+import me.asofold.bpl.seamlessflight.plshared.players.OnlinePlayerMap;
 import me.asofold.bpl.seamlessflight.settings.Settings;
 import me.asofold.bpl.seamlessflight.settings.combat.CombatSymmetry;
 import me.asofold.bpl.seamlessflight.settings.combat.CombatSymmetrySettings;
@@ -140,6 +142,11 @@ public class SeamlessFlight extends JavaPlugin implements Listener{
 		final PluginManager pm = Bukkit.getPluginManager();
 		pm.registerEvents(this, this);
 		
+		// Set up player mapping.
+		OnlinePlayerMap onlineMap = (OnlinePlayerMap) Players.getOnlinePlayerMap();
+		onlineMap.initWithOnlinePlayers();
+		onlineMap.registerOnlinePlayerListener(this);
+		
 		// Set up tasks.
 		// Tick task:
 		final BukkitScheduler sched = Bukkit.getScheduler();
@@ -193,6 +200,8 @@ public class SeamlessFlight extends JavaPlugin implements Listener{
 			catch (Throwable t){}
 			ncpPresent = false;
 		}
+		// Clear player mapping.
+		((OnlinePlayerMap) Players.getOnlinePlayerMap()).clear();
 		// Done.
 		Bukkit.getLogger().info(TAG + " " + getDescription().getFullName() + " is disabled.");
 	}
@@ -473,7 +482,7 @@ public class SeamlessFlight extends JavaPlugin implements Listener{
 	 * @param user
 	 */
 	public void onToggleSneakCallBack(final String user) {
-		final Player player = getServer().getPlayerExact(user);
+		final Player player = Players.getPlayerExact(user);
 		if (player == null) return;
 		final String lcName = user.toLowerCase();
 		final FlyConfig fc = flyMode.getFlyConfig(lcName);

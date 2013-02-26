@@ -3,6 +3,7 @@ package me.asofold.bpl.seamlessflight.flymode;
 
 import me.asofold.bpl.seamlessflight.flymode.FlyConfig.Timing;
 import me.asofold.bpl.seamlessflight.plshared.Blocks;
+import me.asofold.bpl.seamlessflight.plshared.Players;
 import me.asofold.bpl.seamlessflight.plshared.Teleport;
 import me.asofold.bpl.seamlessflight.plshared.actions.ActionChecker;
 import me.asofold.bpl.seamlessflight.plshared.actions.ActionType;
@@ -115,7 +116,7 @@ public abstract class FlyMode{
 		FlyConfig fc = getFlyConfig(user);
 		if ( fc == null) return;
 		if ( fc.flyState == FlyState.DISABLED) return;
-		Player player = Bukkit.getServer().getPlayerExact(user);
+		Player player = Players.getPlayerExact(user);
 		if ( player == null) return; // ignore (inconsistency?)
 		boolean isFlying = fc.flyState != FlyState.OFF; // nofly already checked
 		String message = null;

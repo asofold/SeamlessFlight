@@ -1,13 +1,14 @@
 package me.asofold.bpl.seamlessflight.plshared.actions;
 
-import org.bukkit.Bukkit;
+import me.asofold.bpl.seamlessflight.plshared.Players;
+
 import org.bukkit.entity.Player;
 
 public abstract class SneakActionChecker extends ActionChecker {
 
 	@Override
 	public boolean getToggleState(String user) {
-		Player player = Bukkit.getServer().getPlayerExact(user);
+		Player player = Players.getPlayerExact(user);
 		if (player == null){
 			removeUserData(user);
 			return false;
