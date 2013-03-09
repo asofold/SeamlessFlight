@@ -7,6 +7,7 @@ import org.bukkit.entity.Player;
 import fr.neatmonster.nocheatplus.checks.CheckType;
 import fr.neatmonster.nocheatplus.checks.access.IViolationInfo;
 import fr.neatmonster.nocheatplus.checks.moving.MovingData;
+import fr.neatmonster.nocheatplus.checks.moving.Velocity;
 import fr.neatmonster.nocheatplus.hooks.AbstractNCPHook;
 import fr.neatmonster.nocheatplus.hooks.NCPHookManager;
 
@@ -78,6 +79,10 @@ public class NoCheatPlusHooks {
 			data.noFallVL = 0;
 			data.clearNoFallData();
 			data.clearFlyData();
+			try{
+				data.addHorizontalVelocity(new Velocity(0.5, 10, 7));
+			}
+			catch(Throwable t){}
 			return true;
 		} catch (Throwable t){
 			return false;
