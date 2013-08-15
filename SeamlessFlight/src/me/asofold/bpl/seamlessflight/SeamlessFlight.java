@@ -58,6 +58,8 @@ import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitScheduler;
 
+import fr.neatmonster.nocheatplus.utilities.BlockProperties;
+
 /**
  * Flying plugin, detached from CustomPlg, uses plshared.
  * @author mc_dev
@@ -556,7 +558,13 @@ public class SeamlessFlight extends JavaPlugin implements Listener{
 		 if (player.isFlying() && isFlying(player)){
 			 // TODO: isFlying(player) ?
 			 if (!event.isFlying()) {
-				 event.setCancelled(true);
+				 // Cancel in case of in-air moves.
+				 if (BlockProperties.isOnGroundOrResetCond(player, player.getLocation(), 0.2)) {
+					 // Allow.
+					 stopFly(player);
+				 } else {
+					 event.setCancelled(true);
+				 }
 			 }
 		 } else {
 			 if (player.getGameMode() != GameMode.CREATIVE) {

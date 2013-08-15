@@ -142,3 +142,5 @@ chunk loading optimizer: prevent chunk load far away of players in case a player
 switch to allowflight only !
 
 stopcount: if >0 force check stop if count > max or speed < min speed => really stop.
+
+toggle flight: allow toggling off under certain circumstances (not in air / safe stand)?
