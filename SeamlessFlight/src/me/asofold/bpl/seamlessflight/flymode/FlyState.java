@@ -6,13 +6,15 @@ package me.asofold.bpl.seamlessflight.flymode;
  *
  */
 public enum FlyState {
+	DISABLED(false),
 	OFF(false),
-	NORMAL,
-	SPEED,
-	HOVER,
-	DISABLED(false);
+	HOVER(Constants.DEFAULT_FLY_SPEED),
+	NORMAL(1.5f * Constants.DEFAULT_FLY_SPEED),
+	SPEED(2.5f * Constants.DEFAULT_FLY_SPEED);
 	
 	public final boolean isFlying;
+	
+	public final float defaultFlySpeed;
 	
 	/**
 	 * A flying state.
@@ -26,6 +28,15 @@ public enum FlyState {
 	 * @param isFlying If this state means flying.
 	 */
 	private FlyState(boolean isFlying){
+		this(isFlying, Constants.DEFAULT_FLY_SPEED);
+	}
+	
+	private FlyState(float defaultFlySpeed){
+		this(true, defaultFlySpeed);
+	}
+	
+	private FlyState(boolean isFlying, float defaultFlySpeed){
 		this.isFlying = isFlying;
+		this.defaultFlySpeed = defaultFlySpeed;
 	}
 }

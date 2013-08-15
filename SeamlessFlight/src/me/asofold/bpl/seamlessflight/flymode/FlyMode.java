@@ -20,7 +20,6 @@ import org.bukkit.block.BlockFace;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitScheduler;
-import org.bukkit.util.Vector;
 
 
 /**
@@ -64,22 +63,8 @@ public abstract class FlyMode{
 	 */
 	public long periodActionChecker = 5;
 	
-	/** Acceleration factor for normal mode. */
-	public double fNormal = 1.1;
-	/** Maximum velocity for normal mode. */
-	public double maxNormal = 0.8;
-	/** Acceleration factor for speed mode. */
-	public double fSpeed = 1.2;
-	/** Maximum velocity for speed mode. */
-	public double maxSpeed = 1.6;
-	
-	public boolean smoothing = true;
-	public double smoothingWeight = 0.25;
-	
 	protected Settings settings;
 	protected ModeSettings modeSettings;
-//	private final Random random = new Random(System.currentTimeMillis()-113);
-//	private final double incHovSPazz = 0.1;
 	
 	public FlyMode(Settings settings){
 		setSettings(settings);
@@ -113,21 +98,22 @@ public abstract class FlyMode{
 	 * @param hold
 	 */
 	public void onActionCallBack(String user, int fold, ActionType actionType) {
-		FlyConfig fc = getFlyConfig(user);
-		if ( fc == null) return;
-		if ( fc.flyState == FlyState.DISABLED) return;
-		Player player = Players.getPlayerExact(user);
-		if ( player == null) return; // ignore (inconsistency?)
-		boolean isFlying = fc.flyState != FlyState.OFF; // nofly already checked
+		final FlyConfig fc = getFlyConfig(user);
+		if (fc == null) return;
+		if (fc.flyState == FlyState.DISABLED) return;
+		final Player player = Players.getPlayerExact(user);
+		if (player == null) return; // ignore (inconsistency?)
+		final boolean isFlying = fc.flyState != FlyState.OFF; // nofly already checked
 		String message = null;
-		if ( isFlying){
+		if (isFlying){
 			if ((player.getGameMode() == GameMode.CREATIVE) || !canFlyThrough(player)){
-				fc.setFlying(false);
+				// Ignore game mode for most.
+				player.setFlySpeed(Constants.DEFAULT_FLY_SPEED);
 				//player.setFallDistance(0.0f);
 				fc.noFallBlock = Blocks.FBlockPos(player.getLocation());
-				fc.tsNoFall = System.currentTimeMillis() + 1500;
+				fc.tsNoFall = System.currentTimeMillis() + 8000;
 				if (!player.getAllowFlight()) player.setAllowFlight(true);
-				player.sendMessage(ChatColor.YELLOW+"FLY: "+ChatColor.RED+"off");
+				player.sendMessage(ChatColor.YELLOW+"FLY: "+ChatColor.YELLOW+"creative");
 				return;
 			}
 		} else if (!canLiftOff(player)){
@@ -145,15 +131,17 @@ public abstract class FlyMode{
 		boolean increase = false;
 		switch  ( actionType){
 		case LONG_RELEASE:
-			// nothing, maybe change to hover in special mode, later. 
-			break;
-		case LONG_START:
-			if ( fold == 2){
+			if (fold == 17){ // Artificial (toggle flight).
 				// speed increase or lift-off
 				message = doSpeedIncrease(player, fc);
 				increase = true;
-			} 
-			else if (fold>=3){
+			}
+    		else {
+    			// nothing, maybe change to hover in special mode, later.
+    		}
+			break;
+		case LONG_START:
+			if (fold >= 2){
 				// lift off / change to hover
 				message = doHoverMode(player, fc);
 			} 
@@ -162,25 +150,16 @@ public abstract class FlyMode{
 			}
 			break;
 		case SHORT_RELEASE:
-			if ( fold == 1){
-				// single tap = speed decrease or switch to hover !
-				if ( isFlying){
-					message = doSpeedDecrease(player, fc);
-				} else{
-					if  (player.getLocation().getBlock().getRelative(BlockFace.DOWN).getTypeId() == 0) message = doHoverMode(player, fc);
-				}
-			} 
-			else if (fold >= 2){
-				// switch to hover 
-				if (isFlying) message = doHoverMode(player, fc);
-			} 
-			else{
-				// ignore
+			// tapping = speed decrease or switch to hover !
+			if ( isFlying){
+				message = doSpeedDecrease(player, fc);
+			} else{
+				if  (player.getLocation().getBlock().getRelative(BlockFace.DOWN).getTypeId() == 0) message = doHoverMode(player, fc);
 			}
 			break;
 		case CLICKING:
-			if ( fold >1){
-				if ( !isFlying){
+			if (fold > 1){
+				if (!isFlying){
 					if  (player.getLocation().getBlock().getRelative(BlockFace.DOWN).getTypeId() == 0){
 						message = doHoverMode(player, fc);
 					}
@@ -208,14 +187,11 @@ public abstract class FlyMode{
 					else{
 						message = ChatColor.YELLOW + "FLY: " + ChatColor.LIGHT_PURPLE + altFs.name().toLowerCase() + ChatColor.GRAY + " (" + ChatColor.DARK_RED + fc.flyState.name().toLowerCase() + ChatColor.GRAY + ")";
 						// Set to alternate fly state.
-						if (fc.flyState == FlyState.HOVER){
-							player.setFlying(false);
-						}
-						else if (altFs == FlyState.HOVER){
-							player.setFlying(true);
-							fc.hoverY = player.getLocation().getY();
-						}
+						final float flySpeed = modeSettings.states.get(altFs).flySpeed;
 						fc.flyState = altFs;
+						if (player.getFlySpeed() != flySpeed) {
+							player.setFlySpeed(flySpeed);
+						}
 					}
 				}
 			}
@@ -225,16 +201,14 @@ public abstract class FlyMode{
 	
 	public String doSpeedDecrease(Player player, FlyConfig fc) {
 		if (!fc.isFlying()) return null;
+		if (!player.getAllowFlight()) player.setAllowFlight(true);
+		if (!player.isFlying()) player.setFlying(true);
 		if ( fc.flyState == FlyState.SPEED ){
 			// -> normal
 			fc.flyState = FlyState.NORMAL;
-			if (!player.getAllowFlight()) player.setAllowFlight(true);
-			if (player.isFlying()) player.setFlying(false);
 		} 
 		else if ( fc.flyState == FlyState.HOVER){
 			// ignore
-			if (!player.getAllowFlight()) player.setAllowFlight(true);
-			if (!player.isFlying()) player.setFlying(true);
 		} 
 		else{
 			// normal speed -> hover
@@ -255,7 +229,6 @@ public abstract class FlyMode{
 			message = ChatColor.YELLOW+"FLY: "+ChatColor.GREEN+"on"; // TODO
 		}
 		fc.flyState = FlyState.HOVER;
-		fc.hoverY = player.getLocation().getY();
 		if (!player.getAllowFlight()) player.setAllowFlight(true);
 		if (!player.isFlying()) player.setFlying(true);
 		return message;
@@ -264,15 +237,14 @@ public abstract class FlyMode{
 	public String doSpeedIncrease(Player player, FlyConfig fc) {
 		String message = null;
 		if (!player.getAllowFlight()) player.setAllowFlight(true);
+		if (!player.isFlying()) player.setFlying(true);
 		if ( !fc.isFlying()){
 			fc.setFlying(true);
 			message = ChatColor.YELLOW+"FLY: "+ChatColor.GREEN+"on"; // TODO
 		} else if ( fc.flyState == FlyState.HOVER){
 			fc.flyState = FlyState.NORMAL;
-			if (player.isFlying()) player.setFlying(false);
 		} else if (fc.flyState != FlyState.SPEED){
 			fc.flyState = FlyState.SPEED;
-			if (player.isFlying()) player.setFlying(false);
 			message = ChatColor.YELLOW+"FLY: "+ChatColor.LIGHT_PURPLE+"speed"; // TODO
 		} // else ignore.
 		return message;
@@ -286,8 +258,10 @@ public abstract class FlyMode{
 	 * @param toLoc may be null / UNUSED
 	 * @return
 	 */
-	public final FlyResult processMove(final Player player, final FlyConfig fc, final Location fromLoc, final Location toLoc, final boolean forceFull){
+	public final FlyResult processMove(final Player player, final FlyConfig fc, final Location fromLoc, final Location toLoc, final int tick, final boolean forceFull){
 		final long ts = System.currentTimeMillis();
+		fc.tickProcess = tick;
+		fc.sequence ++;
 		final boolean fullCheck = forceFull || (ts > fc.tsAction); // if false: prevent double adding speed etc.
 		if (fullCheck) fc.tsAction = ts+this.msFullCheck;
 		// TODO: use full check
@@ -325,12 +299,7 @@ public abstract class FlyMode{
 		}
 		if ( ts-fc.tsPermCheck > msFlyCheck ){
 			if (!player.getAllowFlight()) player.setAllowFlight(true);
-			if (fc.flyState == FlyState.HOVER){
-				if (!player.isFlying()) player.setFlying(true);
-			}
-			else{
-				if (player.isFlying()) player.setFlying(false);
-			}
+			if (!player.isFlying()) player.setFlying(true);
 			if (fsSet.msMaxFly > 0 && fsSet.msReset > 0){
 				if (timing.tsExpire < ts){
 					// Timing expired.
@@ -355,14 +324,8 @@ public abstract class FlyMode{
 							else{
 								player.sendMessage(ChatColor.YELLOW + "FLY: " + ChatColor.LIGHT_PURPLE + altFs.name().toLowerCase() + ChatColor.GRAY + " (" + ChatColor.DARK_RED + fc.flyState.name().toLowerCase() + ChatColor.GRAY + ")");
 								// Set to alternate fly state.
-								if (fc.flyState == FlyState.HOVER){
-									player.setFlying(false);
-								}
-								else if (altFs == FlyState.HOVER){
-									player.setFlying(true);
-									fc.hoverY = player.getLocation().getY();
-								}
 								fc.flyState = altFs;
+								fsSet = modeSettings.states.get(altFs);
 								timing = fc.timings.get(altFs);
 								if (timing == null){
 									timing = new Timing();
@@ -381,6 +344,8 @@ public abstract class FlyMode{
 				if (!hasPermission(player, rootPerm+".bypass.stop.flythrough")){
 					abort = true;
 					stop = true;
+					player.setFlying(false);
+					player.setAllowFlight(false);
 				}
 			}
 			else fc.abort = false;
@@ -391,8 +356,15 @@ public abstract class FlyMode{
 		} else if (fc.abort) abort = true;
 		
 		if (abort){
-			player.setFlying(false);
-			player.setAllowFlight(player.getGameMode() == GameMode.CREATIVE);
+			if (player.getFlySpeed() != Constants.DEFAULT_FLY_SPEED) {
+				player.setFlySpeed(Constants.DEFAULT_FLY_SPEED);
+			}
+			if (player.getGameMode() == GameMode.CREATIVE){
+				player.setAllowFlight(true);
+				// Keep flying state.
+			} else {
+				player.setFlying(false);
+			}
 //			fc.tsPermCheck = ts - Math.min(msFlyCheck/2, 300); // TODO slight problem maybe
 			fc.abort = true;
 			fc.flyState = FlyState.NORMAL; // ?
@@ -417,145 +389,33 @@ public abstract class FlyMode{
 			return res;
 		} else fc.abort = false;
 		// Now for real :)
-		Vector v = player.getVelocity(); // eTo.subtract(fromLoc).toVector();
-		// TODO: Make constants configurable and/or player/whatever-dependent + RENAME!
-		final double vY = v.getY();
-//		double vX = v.getX();
-		final double l = v.length();
+		if (player.getFlySpeed() != fsSet.flySpeed) {
+			player.setFlySpeed(fsSet.flySpeed);
+		}
 		boolean checkEnd = false;
-		final double cY = loc.getY();
-		final double cZ = loc.getZ();
-		final double cX = loc.getX();
-		Vector resV = null;
-		if (actionChecker.getToggleState(player.getName())){ 
-			if (!fullCheck) return res; // No double speed up / accel
-			final double aF ;
-			final double aMax;
-			final double aH = 0.2;
-			final Vector vBase;
-			vBase = loc.getDirection().normalize();
-			if ( fc.flyState == FlyState.SPEED){
-				// TODO cleanup / find something simpler
-				aF =  fSpeed;	
-				aMax = maxSpeed;
-			} else if ( fc.flyState == FlyState.HOVER){
-				// mild speed
-				aF = 0.0;
-				aMax = 0.0;
-			} else{
-				// mild speed
-				aF = fNormal;
-				aMax = maxNormal;
-			}
-			if (aF != 0.0){
-				resV = vBase.multiply(l*aF);
-				if ( smoothing ) resV.add(v.multiply(smoothingWeight));
-				if ( resV.getY() > -0.1 ) resV = resV.add(new Vector(0.0,aH,0.0));
-				if ( resV.lengthSquared() >aMax ){
-					resV = resV.normalize().multiply(aMax);
-				}
-			}
-			else{
-				resV = null;
-			}
-			fc.hoverY = ((int) cY);
-		} else{
-			// rather hover mode or just descending slowly
-			if ( fc.flyState == FlyState.HOVER){
-				resV = null;
-//				// TODO: reorganize for efficiency (with fullCheck)
-//				if ( fc.hoverY == -10000) fc.hoverY = cY;
-//				// LILYPADS:
-				final double d = Math.abs(cX-fc.lastX)+Math.abs(cZ-fc.lastZ); //Math.max(Math.abs(cX-fc.lastX)+Math.abs(cZ-fc.lastZ), Math.abs(vX)+Math.abs(vY));
-////				Block block = loc.getBlock();
-////				int id = block.getTypeId();
-				final double dY = cY-fc.hoverY;
-//				if ( dY<0 ){
-//					// ASCEND
-//					if ( ts < fc.tsExpireHover){
-//						v = v.setY(Math.max(0.4, vY));
-//						resV = v;
-//					} else {
-//						v = v.setY(Math.max(0.2, vY));
-//						fc.tsExpireHover = ts + 300; // TODO: maybe remove
-//						resV = v;
-//					}
-//				} else{ 
-//					// Not moving fast, horizontally
-					if ((Math.abs(cY-fc.lastY)<0.001)){
-						// stationary...
-						if (d<0.001){
-							if ( forceFull ) checkEnd = true;
-						}
-					} else if ( (vY<0) && (dY<0.05)){
-						v.setY(0.0);
-						resV = v;
-						if (d<0.001){
-							if ( forceFull ) checkEnd = true;
-						}
-					}
-//					else if ( d<0.05){
-////						FlyUtil.refreshLilyPadMinimal(player, fc);
-//						if (random.nextInt(1000)<2){
-//							if (vY>=0) v = v.setY(vY+incHovSPazz);
-//							else{
-//								v.setY(incHovSPazz);
-//							}
-//							resV = v;
-//						}
-//					}
-//					else {
-//						fc.tsExpireHover = ts + 830;
-//					}
-//				} 
-			} else if (fc.flyState == FlyState.SPEED){
-				// break: y towards zero 
-				v = v.setY(v.getY() * .75); // TODO
-				if (l<0.12 && (Math.abs(cY-fc.lastY)<0.001)) checkEnd = true;
-				resV = v;
-			} else{
-//				if ( (toLoc!= null) && (fromLoc != null)){
-//					Vector addV = toLoc.toVector().subtract(fromLoc.toVector()).normalize().multiply(0.2);
-//					v = v.add(addV);
-//				}
-				// fc.speedMode = false;
-				// break: y towards zero 
-				if (l<0.12 && (Math.abs(cY-fc.lastY)<0.001)) checkEnd = true;
-				v = v.setY(v.getY() * .75); // TODO
-				resV = v;
-			}
+		if (fc.stopCount > 0 || (fc.sequence % 4) == 3) {
+			checkEnd = true;
 		}
-		
-		if ( checkEnd ){
+		if (checkEnd){
 			if (checkStop(loc)){//isSafeStand(loc)){//.getBlock().getRelative(BlockFace.DOWN).getLocation())){
-				// end flying
-				fc.setFlying(false);
-				res.configChanged = true;
-				res.removeSurvey = true;
-//				player.setFallDistance(0.0f);
-				fc.noFallBlock = Blocks.FBlockPos(loc);
-				fc.tsNoFall = ts + 1500;
-				player.setAllowFlight(player.getGameMode() == GameMode.CREATIVE);
-				player.setFlying(false);
-				//event.setTo(loc);
-				return res;
+				fc.stopCount ++;
+				if (fc.stopCount >= 40 || fc.stopCount >= 10 && fromLoc != null && fromLoc.distanceSquared(toLoc) <= 0.22 * 0.22) {
+					// end flying
+					fc.stopCount = 0;
+					fc.setFlying(false);
+					res.configChanged = true;
+					res.removeSurvey = true;
+//					player.setFallDistance(0.0f);
+					fc.noFallBlock = Blocks.FBlockPos(loc);
+					fc.tsNoFall = ts + 1500;
+					return res;
+				}
+			} else {
+				fc.stopCount = 0;
 			}
 		}
 		
-		// if (vY<0 && v.lengthSquared()<tol) player.setVelocity(new Vector(0,0,0)); // TODO
 //		player.setFallDistance(0.0f);
-		fc.lastVY = vY; // TODO: or v.getY
-		fc.lastY = cY;
-		fc.lastX = cX;
-		fc.lastZ = cZ;
-		if ( resV != null ) player.setVelocity(resV);
-
-//		Location to = event.getFrom().add(v);
-//		
-//		to.setPitch(eTo.getPitch());
-//		to.setYaw(eTo.getYaw());
-		// event.setTo(to);
-		// TODO: event.setTo() ?
 		
 		return res;
 	}
@@ -581,8 +441,10 @@ public abstract class FlyMode{
 			if (canUseFlyState(player, fc, FlyState.NORMAL, ts)) return FlyState.NORMAL;
 			else if (canUseFlyState(player, fc, FlyState.HOVER, ts)) return FlyState.HOVER;
 			else return null;
+		default:
+			throw new IllegalStateException("Bad FlyState: " + fc.flyState);
 		}
-		throw new IllegalStateException("Bad FlyState: " + fc.flyState);
+		
 	}
 	
 	private boolean canUseFlyState(final Player player, final FlyConfig fc, final FlyState state, final long ts){
@@ -637,7 +499,7 @@ public abstract class FlyMode{
 	public int registerActionChecker(Plugin plugin){
 		BukkitScheduler sched = Bukkit.getServer().getScheduler();
 		if (actionCheckerId != -1){
-			if ( sched.isQueued(actionCheckerId) || sched.isCurrentlyRunning(actionCheckerId)){
+			if (sched.isQueued(actionCheckerId) || sched.isCurrentlyRunning(actionCheckerId)){
 				sched.cancelTask(actionCheckerId);
 			}
 		}
@@ -658,19 +520,23 @@ public abstract class FlyMode{
 	public final void adapt(final Player player, final FlyConfig fc){
 		if (player.getGameMode() == GameMode.CREATIVE){
 			if (!player.getAllowFlight()) player.setAllowFlight(true);
+			player.setFlySpeed(Constants.DEFAULT_FLY_SPEED);
+			// TODO: check onground maybe and set flying.
 			// TODO: setFlying(false)? maybe inconsistencies possible...
 			return;
 		}
-		else if (fc != null && fc.isFlying()){
+		else if (fc != null && fc.isFlying() && !fc.abort){
 			// Set to flying.
 			player.setAllowFlight(true);
-			player.setFlying(fc.flyState == FlyState.HOVER);
+			player.setFlying(true);
+			player.setFlySpeed(modeSettings.states.get(fc.flyState).flySpeed);
 			// For safety also set noFallBlock.
 			fc.noFallBlock = Blocks.FBlockPos(player.getLocation());
 			fc.tsNoFall = System.currentTimeMillis();
 		}
 		else{
-			player.setAllowFlight(false);
+			// Allow toggling if just off.
+			player.setAllowFlight(fc != null && fc.flyState == FlyState.OFF);
 			player.setFlying(false);
 		}
 	}

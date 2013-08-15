@@ -132,6 +132,13 @@ add max-descend-speed for not having sneak on or last check being longer time ag
 
 ! get rid of polling, find a way to use teleport instead !
 
+*********************************************************************
 
-*** BUG: flying stops when logging back in (!)
+count blocks on ground + speed for stopping flying (not only by blocks below).
 
+chunk loading optimizer: prevent chunk load far away of players in case a player is flying quickly
+
+
+switch to allowflight only !
+
+stopcount: if >0 force check stop if count > max or speed < min speed => really stop.

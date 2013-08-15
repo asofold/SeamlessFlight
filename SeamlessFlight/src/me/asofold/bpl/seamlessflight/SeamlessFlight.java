@@ -46,11 +46,13 @@ import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.entity.PotionSplashEvent;
 import org.bukkit.event.player.PlayerChangedWorldEvent;
+import org.bukkit.event.player.PlayerGameModeChangeEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerKickEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerTeleportEvent;
+import org.bukkit.event.player.PlayerToggleFlightEvent;
 import org.bukkit.event.player.PlayerToggleSneakEvent;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -106,6 +108,8 @@ public class SeamlessFlight extends JavaPlugin implements Listener{
 	private Settings settings = new Settings();
 	
 	private final CombatSymmetrySettings allowAll = new CombatSymmetrySettings();
+	
+	private int tick = 0;
 	
 	public SeamlessFlight(){
 		for (String cmd : new String[]{
@@ -267,7 +271,14 @@ public class SeamlessFlight extends JavaPlugin implements Listener{
 			if ((sender instanceof Player) && args.length == 0 || args.length == 1 && flyCmds.contains(cmd)){
 				final Player player = (Player) sender;
 				if (!player.hasPermission(flyMode.rootPerm + ".use")){
-					player.sendMessage(ChatColor.DARK_RED + "No permission for flying.");
+					if (isFlying(player)){
+						// Turn off.
+						setNoFly(player, true);
+						player.sendMessage(ChatColor.YELLOW+"FLY: "+ChatColor.DARK_RED+"disabled");
+					}
+					else {
+						player.sendMessage(ChatColor.DARK_RED + "No permission for flying.");
+					}
 					return true;
 				}
 				boolean nofly = isFlying(player);
@@ -283,8 +294,11 @@ public class SeamlessFlight extends JavaPlugin implements Listener{
 				}
 				if (nofly){
 					player.sendMessage(ChatColor.YELLOW+"FLY: "+ChatColor.DARK_RED+"disabled");
+					player.setAllowFlight(false);
+					player.setFlying(false);
 				} else{
 					player.sendMessage(ChatColor.YELLOW+"FLY: "+ChatColor.DARK_GREEN+"enabled");
+					player.setAllowFlight(true);
 				}
 				return true;
 			}
@@ -451,19 +465,19 @@ public class SeamlessFlight extends JavaPlugin implements Listener{
 		else return false;
 	}
 	
-	private final FlyResult processFly(final Player player, final Location lFrom, final Location lTo, final boolean forceFull){
+	private final void processFly(final Player player, final Location lFrom, final Location lTo, final boolean forceFull){
 		final String lcName = player.getName().toLowerCase();
 		final FlyConfig fc = flyMode.getFlyConfig(lcName);
 		if (fc == null){
 			flying.remove(lcName);
-			final FlyResult res = new FlyResult();
-			res.configChanged = false; // TODO: policy ?
-			res.removeSurvey = true;
-			res.setTo = null;
 			flyMode.adapt(player, fc);
-			return res;
+			return;
 		}
-		final FlyResult res = flyMode.processMove(player, fc,lFrom, lTo, forceFull);
+		if (!forceFull && tick - fc.tickProcess < 4){
+			// Skip processing further.
+			return;
+		}
+		final FlyResult res = flyMode.processMove(player, fc,lFrom, lTo, tick, forceFull);
 		if (res.removeSurvey){
 			if (res.configChanged){
 				if ( player.getGameMode() == GameMode.CREATIVE) player.sendMessage(ChatColor.GRAY+"(Turn off creative-mode to use SeamlessFlight.)");
@@ -472,9 +486,8 @@ public class SeamlessFlight extends JavaPlugin implements Listener{
 			flying.remove(lcName);
 			reset(player);
 			flyMode.adapt(player, fc);
-		} 
+		}
 //		if (res.configChanged) ...
-		return res;
 	}
 	
 	/**
@@ -497,14 +510,17 @@ public class SeamlessFlight extends JavaPlugin implements Listener{
 		if (!usePolling) return;
 		final Player[] players = new Player[flying.size()];
 		flying.values().toArray(players);
-		for (final Player player : players){
+		for (int i = 0; i < players.length; i++) {
+			final Player player = players[i];
 			if (!player.isOnline()){
 				getLogger().warning("Player " + player.getName() + " is found in the flying players set, but is offline.");
 				flying.remove(player.getName().toLowerCase());
+				// TODO: Check if to alter other data !
 				continue;
 			}
 			processFly(player, null, null, false);
 		}
+		tick ++;
 	}
 	
 	protected void onLeave(final Player player) {
@@ -525,20 +541,87 @@ public class SeamlessFlight extends JavaPlugin implements Listener{
 		updateFlyState(event.getPlayer());
 	}
 	
-	@EventHandler(priority = EventPriority.MONITOR)
-	public  final void processPlayerToggleSneak(final PlayerToggleSneakEvent event) {
+	@EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = false)
+	public  final void onToggleSneak(final PlayerToggleSneakEvent event) {
 		final Player player = event.getPlayer();
 		final boolean isSneaking = event.isSneaking();
 		flyMode.actionChecker.onToggleAction(player.getName().toLowerCase(), isSneaking);
+	}
+	
+	@EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+	public void onToggleFlight(final PlayerToggleFlightEvent event){
+		 final Player player = event.getPlayer();
+		 // Callback with an artificial configuration indicates lift-off.
+		 flyMode.onActionCallBack(player.getName(), 17, ActionType.LONG_RELEASE);
+		 if (player.isFlying() && isFlying(player)){
+			 // TODO: isFlying(player) ?
+			 if (!event.isFlying()) {
+				 event.setCancelled(true);
+			 }
+		 } else {
+			 if (player.getGameMode() != GameMode.CREATIVE) {
+				 if (player.hasPermission(flyMode.rootPerm + ".use")) {
+					 player.setAllowFlight(true);
+				 } else {
+					 player.setAllowFlight(false);
+				 }
+				 player.setFlying(false);
+				 if (event.isFlying()) {
+					 event.setCancelled(true);
+				 }
+			 }
+		 }
+	}
+	
+	@EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+	public void onChangeGameMode(final PlayerGameModeChangeEvent event) {
+		final Player player = event.getPlayer();
+		final GameMode gm = event.getNewGameMode();
+		if (gm == GameMode.CREATIVE) {
+			if (player.isFlying()) {
+				stopFly(player);
+			}
+		} else {
+			updateFlyState(player);
+		}
 	}
 	
 	@EventHandler(priority = EventPriority.NORMAL, ignoreCancelled = true)
 	public final void onPlayerMove(final PlayerMoveEvent event) {
 		// TODO: priority
 		final Player player = event.getPlayer();
-		if (!flying.containsKey(player.getName().toLowerCase())) return;
-		final FlyResult res = processFly(player,  event.getFrom(), event.getTo(), true);
-		if (res.setTo!=null) event.setTo(res.setTo);
+		final String lcName = player.getName().toLowerCase();
+		if (!flying.containsKey(lcName)) {
+			// Greedy approach.
+			if (player.isFlying()) {
+				if (player.getGameMode() != GameMode.CREATIVE) {
+					player.setAllowFlight(false);
+					player.setFlying(false);
+				}
+				return;
+			} else if (!player.getAllowFlight()) {
+				if (flyConfigs.containsKey(lcName)){
+					// Correct this if the player has the permission.
+					if (player.hasPermission(flyMode.rootPerm + ".use")) {
+						player.setAllowFlight(true);
+					}
+					return;
+				} else {
+					return;
+				}
+			} else {
+				return;
+			}
+		} else if (!player.getAllowFlight()) {
+			if (flyConfigs.containsKey(lcName)){
+				// Correct this if the player has the permission.
+				if (player.hasPermission(flyMode.rootPerm + ".use")) {
+					player.setAllowFlight(true);
+					flying.put(lcName, player);
+				}
+			}
+		}
+		processFly(player,  event.getFrom(), event.getTo(), true);
 	}
 	
 	@EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)

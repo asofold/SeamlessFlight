@@ -1,6 +1,5 @@
 package me.asofold.bpl.seamlessflight.flymode;
 
-import org.bukkit.Location;
 
 
 /**
@@ -20,8 +19,6 @@ public class FlyResult {
 	 */
 	public boolean removeSurvey = false;
 	
-	public Location setTo = null;
-	
 	
 	public FlyResult setConfigChanged(boolean c){
 		configChanged = c;
@@ -30,8 +27,5 @@ public class FlyResult {
 	public FlyResult setRemoveSurvey(boolean r){
 		removeSurvey = r;
 		return this;
-	}
-	public void setTo(Location to) {
-		this.setTo = to;
 	}
 }

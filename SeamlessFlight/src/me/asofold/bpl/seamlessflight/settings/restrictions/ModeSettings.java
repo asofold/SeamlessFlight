@@ -18,7 +18,7 @@ public class ModeSettings {
 	public ModeSettings(){
 		for (FlyState state : FlyState.values()){
 			if (state.isFlying){
-				FlyStateSettings fsf = new FlyStateSettings();
+				FlyStateSettings fsf = new FlyStateSettings(state);
 				states.put(state, fsf);
 			}
 		}
@@ -27,7 +27,7 @@ public class ModeSettings {
 	public void toConfig(CompatConfig cfg, String prefix){
 		for (FlyState state : FlyState.values()){
 			if (state.isFlying){
-				states.get(state).toConfig(cfg, prefix + state.name() + ".");
+				states.get(state).toConfig(cfg, prefix + state.name() + ".", state);
 			}
 		}
 	}
@@ -36,7 +36,7 @@ public class ModeSettings {
 	public void fromConfig(CompatConfig cfg, String prefix){
 		for (FlyState state : FlyState.values()){
 			if (state.isFlying){
-				states.get(state).fromConfig(cfg, prefix + state.name() + ".");
+				states.get(state).fromConfig(cfg, prefix + state.name() + ".", state);
 			}
 		}
 	}

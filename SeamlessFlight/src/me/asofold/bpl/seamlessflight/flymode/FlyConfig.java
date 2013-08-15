@@ -21,31 +21,20 @@ public class FlyConfig {
 	}
 
 	public FlyState flyState = FlyState.DISABLED; // default
-
 	
+	/** Last tick processMove was called. */
+	public int tickProcess = 0;
 	public long tsPermCheck = 0;
 	// TODO: other stuff, smoothing, vert+horiz-speed/slope, ...
 	
 	
 	public final Map<FlyState, Timing> timings = new HashMap<FlyState, Timing>();
 	
-	/**
-	 * To see signum change
-	 */
-	public double lastVY = 0.0;
-	// TODO: maybe store last vector ?
-	
-	public double hoverY = -10000;
-	
-	/**
-	 * Used for switching state on double toggle sneak (!).
-	 */
-//	public long tsActivateSneak = 0;
-	public long tsExpireHover = 0;
-	public double lastY = -10000;
-	public double lastX = -10000;
-	public double lastZ = -10000;
 	public boolean abort = false;
+	
+	public long sequence = 0;
+	
+	public int stopCount = 0; 
 	
 	/**
 	 * TODO: maybe get rid of this block
@@ -63,6 +52,7 @@ public class FlyConfig {
 	public long tsAction = 0;
 	
 	public boolean toggle(){
+		stopCount = 0;
 		if (flyState == FlyState.DISABLED){
 			setFlying(false);
 			return false;
@@ -84,12 +74,10 @@ public class FlyConfig {
 	public void  setFlying(boolean flying){
 		// TODO: adjustments for state changes ?
 		// TODO: cleanups
+		stopCount = 0;
 		if (flyState == FlyState.DISABLED) flying = false;
 		if (!flying){
 			flyState = FlyState.OFF;
-			tsExpireHover = 0;
-			lastY = -100;
-			hoverY = -100;
 			abort = false;
 		} else{
 			 // TODO
@@ -104,6 +92,7 @@ public class FlyConfig {
 	 * @return
 	 */
 	public boolean toggleNofly(){
+		stopCount = 0;
 		setNofly(!(flyState == FlyState.DISABLED));
 		if ( flyState == FlyState.DISABLED ) {
 			return true;
@@ -113,6 +102,7 @@ public class FlyConfig {
 	}
 	
 	public void setNofly(boolean nofly){
+		stopCount = 0;
 		if (nofly){
 			setFlying(false);
 			flyState = FlyState.DISABLED;
